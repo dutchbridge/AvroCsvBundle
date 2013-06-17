@@ -8,7 +8,6 @@
 namespace Avro\CsvBundle\Import;
 
 use Avro\CaseBundle\Util\CaseConverter;
-use Avro\CsvBundle\Annotation\Exclude;
 use Avro\CsvBundle\Event\RowAddedEvent;
 use Avro\CsvBundle\Util\Reader;
 
@@ -112,51 +111,53 @@ class Importer
         }
 
         // loop through fields and set to row value
+        $associated = array();
         foreach ($fields as $k => $v) {
             if ($this->metadata->hasField(lcfirst($v))) {
                 $entity->{'set'.$fields[$k]}($row[$k]);
-            } else if ($this->metadata->hasAssociation(lcfirst($v))) {
+            } elseif ($this->metadata->hasAssociation(lcfirst($v))) {
                 $association = $this->metadata->associationMappings[lcfirst($v)];
                 switch ($association['type']) {
-                    case '1': // oneToOne
-                        //Todo:
-                        break;
-                    case '2': // manyToOne
-                        continue;
-                        // still needs work
-                        $joinColumnId = $association['joinColumns'][0]['name'];
-                        $legacyId = $row[array_search($this->caseConverter->toCamelCase($joinColumnId), $this->headers)];
-                        if ($legacyId) {
-                            try {
-                                $criteria = array('legacyId' => $legacyId);
-                                if ($this->useOwner) {
-                                    $criteria['owner'] = $this->owner->getId();
-                                }
-
-                                $associationClass = new \ReflectionClass($association['targetEntity']);
-                                if ($associationClass->hasProperty('legacyId')) {
-                                    $relation = $this->objectManager->getRepository($association['targetEntity'])->findOneBy($criteria);
-                                    if ($relation) {
-                                        $entity->{'set'.ucfirst($association['fieldName'])}($relation);
-                                    }
-                                }
-                            } catch(\Exception $e) {
-                                // legacyId does not exist
-                                // fail silently
+                case '1': // oneToOne
+                    //Todo:
+                    break;
+                case '2': // manyToOne
+                    continue;
+                    // still needs work
+                    $joinColumnId = $association['joinColumns'][0]['name'];
+                    $legacyId = $row[array_search($this->caseConverter->toCamelCase($joinColumnId), $this->headers)];
+                    if ($legacyId) {
+                        try {
+                            $criteria = array('legacyId' => $legacyId);
+                            if ($this->useOwner) {
+                                $criteria['owner'] = $this->owner->getId();
                             }
+
+                            $associationClass = new \ReflectionClass($association['targetEntity']);
+                            if ($associationClass->hasProperty('legacyId')) {
+                                $relation = $this->objectManager->getRepository($association['targetEntity'])->findOneBy($criteria);
+                                if ($relation) {
+                                    $entity->{'set'.ucfirst($association['fieldName'])}($relation);
+                                }
+                            }
+                        } catch (\Exception $e) {
+                            // legacyId does not exist
+                            // fail silently
                         }
-                        break;
-                    case '4': // oneToMany
-                        //TODO:
-                        break;
-                    case '8': // manyToMany
-                        //TODO:
-                        break;
+                    }
+                    break;
+                case '4': // oneToMany
+                    //TODO:
+                    break;
+                case '8': // manyToMany
+                    //TODO:
+                    break;
                 }
             }
+            $associated[$v] = $row[$k];
         }
 
-        $this->dispatcher->dispatch('avro_csv.row_added', new RowAddedEvent($entity, $row, $fields));
+        $this->dispatcher->dispatch('avro_csv.row_added', new RowAddedEvent($entity, $associated));
 
         $this->objectManager->persist($entity);
 
