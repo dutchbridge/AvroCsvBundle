@@ -21,25 +21,56 @@ class RowAddedEvent extends Event
     protected $fields;
 
     /**
+     *  Constructor
+     *
      * @param DoctrineObject $object The new object being persisted
      * @param array          $row    The row being imported
-     * @param array          $fields The mapped fields
+     *
+     * @return void
      */
-    public function __construct($object, array $row, array $fields)
+    public function __construct($object, array $row)
+    {
+        $this->setObject($object);
+        $this->setRow($row);
+        $this->setFields($row);
+    }
+
+    /**
+     * Set object
+     *
+     * @param object $object object
+     *
+     * @return object
+     */
+    public function setObject($object)
     {
         $this->object = $object;
-        $this->row = $row;
-        $this->fields = $fields;
+
+        return $this;
     }
 
     /**
      * Get the doctrine object
      *
-     * @return DoctrienObject
+     * @return DoctrineObject
      */
     public function getObject()
     {
         return $this->object;
+    }
+
+    /**
+     * Set row
+     *
+     * @param array $row row
+     *
+     * @return object
+     */
+    public function setRow($row)
+    {
+        $this->row = $row;
+
+        return $this;
     }
 
     /**
@@ -53,6 +84,32 @@ class RowAddedEvent extends Event
     }
 
     /**
+     * Get value of column
+     *
+     * @param string $name name
+     *
+     * @return value
+     */
+    public function getValue($name)
+    {
+        return $this->row[$name];
+    }
+
+    /**
+     * Set mapped fields
+     *
+     * @param array $row row
+     *
+     * @return object
+     */
+    public function setFields($row)
+    {
+        $this->fields = array_keys($row);
+
+        return $this;
+    }
+
+    /**
      * Get mapped fields
      *
      * @return array
@@ -62,4 +119,3 @@ class RowAddedEvent extends Event
         return $this->fields;
     }
 }
-
