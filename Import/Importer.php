@@ -157,9 +157,14 @@ class Importer
             $associated[$v] = $row[$k];
         }
 
-        $this->dispatcher->dispatch('avro_csv.row_added', new RowAddedEvent($entity, $associated));
+        $event = $this->dispatcher->dispatch('avro_csv.row_added', new RowAddedEvent($entity, $associated));
 
-        $this->objectManager->persist($entity);
+        if (!$event->isProcessed()) {
+            // niet gelukt
+            $this->importCount--;
+        } else {
+            $this->objectManager->persist($entity);
+        }
 
         if ($andFlush) {
             $this->objectManager->flush();
