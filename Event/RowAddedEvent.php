@@ -118,4 +118,9 @@ class RowAddedEvent extends Event
     {
         return $this->fields;
     }
+
+    public function isProcessed()
+    {
+        return $this->getObject()->isProcessed();
+    }
 }
